@@ -23,6 +23,7 @@
       width: 100%;
       height: calc(100vh - 90px);
     }
+    .leaflet-tile { image-rendering: auto; }
     #info {
       position: absolute;
       top: 110px;
@@ -199,9 +200,27 @@ const countries = {
   "Montenegro": { capital: "Подгорица", pop: 1, lang: "Сербский" },
   "Slovenia": { capital: "Любляна", pop: 2, lang: "Словенский" },
   "Singapore": { capital: "Сингапур", pop: 6, lang: "Английский" },
+  "Dem. Rep. Congo": { capital: "Киншаса", pop: 100, lang: "Французский" },
+  "Rep. Congo": { capital: "Браззавиль", pop: 6, lang: "Французский" },
+  "Central African Rep.": { capital: "Банги", pop: 5, lang: "Французский" },
+  "S. Sudan": { capital: "Джуба", pop: 11, lang: "Английский" },
+  "W. Sahara": { capital: "Эль-Аюн", pop: 0.6, lang: "Арабский" },
+  "Eq. Guinea": { capital: "Малабо", pop: 1, lang: "Испанский" },
+  "Czechia": { capital: "Прага", pop: 11, lang: "Чешский" },
+  "Bosnia and Herzegovina": { capital: "Сараево", pop: 3, lang: "Боснийский" },
+  "Macedonia": { capital: "Скопье", pop: 2, lang: "Македонский" },
+  "Dominican Rep.": { capital: "Санто-Доминго", pop: 11, lang: "Испанский" },
+  "Falkland Is.": { capital: "Стэнли", pop: 0.003, lang: "Английский" },
+  "Fr. S. Antarctic Lands": { capital: "Порт-о-Франс", pop: 0.001, lang: "Французский" },
+  "Timor-Leste": { capital: "Дили", pop: 1, lang: "Тетум" },
+  "eSwatini": { capital: "Мбабане", pop: 1, lang: "Свати" },
+  "Swaziland": { capital: "Мбабане", pop: 1, lang: "Свати" },
+  "Côte d'Ivoire": { capital: "Ямусукро", pop: 27, lang: "Французский" },
 };
 
 const map = L.map('map', { center: [20, 0], zoom: 2, attributionControl: false });
+setTimeout(() => map.invalidateSize(), 300);
+window.addEventListener('load', () => setTimeout(() => map.invalidateSize(), 100));
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
 
