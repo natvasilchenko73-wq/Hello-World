@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Карта мира — столицы, население, языки</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      color: #333;
+    }
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 20px 32px;
+    }
+    header h1 { font-size: 22px; font-weight: 500; }
+    header p { font-size: 14px; opacity: 0.7; margin-top: 4px; }
+    #map {
+      width: 100%;
+      height: calc(100vh - 90px);
+    }
+    #info {
+      position: absolute;
+      top: 110px;
+      right: 20px;
+      z-index: 1000;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 13px;
+      color: #666;
+      pointer-events: none;
+      min-width: 190px;
+      line-height: 1.9;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    #info .country-name {
+      font-weight: 500;
+      font-size: 15px;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🗺 Карта мира</h1>
+  <p>Наведите курсор на страну, чтобы узнать столицу, население и язык</p>
+</header>
+
+<div id="map"></div>
+<div id="info">Наведите на страну</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script>
+const countries = {
+  "Russia": { capital: "Москва", pop: 144, lang: "Русский" },
+  "United States of America": { capital: "Вашингтон", pop: 331, lang: "Английский" },
+  "China": { capital: "Пекин", pop: 1412, lang: "Китайский" },
+  "India": { capital: "Нью-Дели", pop: 1380, lang: "Хинди" },
+  "Brazil": { capital: "Бразилиа", pop: 215, lang: "Португальский" },
+  "Australia": { capital: "Канберра", pop: 26, lang: "Английский" },
+  "Canada": { capital: "Оттава", pop: 38, lang: "Английский" },
+  "Argentina": { capital: "Буэнос-Айрес", pop: 45, lang: "Испанский" },
+  "Kazakhstan": { capital: "Астана", pop: 19, lang: "Казахский" },
+  "Algeria": { capital: "Алжир", pop: 44, lang: "Арабский" },
+  "Saudi Arabia": { capital: "Эр-Рияд", pop: 35, lang: "Арабский" },
+  "Mexico": { capital: "Мехико", pop: 128, lang: "Испанский" },
+  "Indonesia": { capital: "Джакарта", pop: 273, lang: "Индонезийский" },
+  "Sudan": { capital: "Хартум", pop: 44, lang: "Арабский" },
+  "Libya": { capital: "Триполи", pop: 7, lang: "Арабский" },
+  "Iran": { capital: "Тегеран", pop: 84, lang: "Персидский" },
+  "Mongolia": { capital: "Улан-Батор", pop: 3, lang: "Монгольский" },
+  "Peru": { capital: "Лима", pop: 33, lang: "Испанский" },
+  "Chad": { capital: "Нджамена", pop: 17, lang: "Арабский" },
+  "Niger": { capital: "Ниамей", pop: 25, lang: "Французский" },
+  "Angola": { capital: "Луанда", pop: 34, lang: "Португальский" },
+  "Mali": { capital: "Бамако", pop: 22, lang: "Французский" },
+  "South Africa": { capital: "Претория", pop: 60, lang: "Зулу" },
+  "Colombia": { capital: "Богота", pop: 51, lang: "Испанский" },
+  "Ethiopia": { capital: "Аддис-Абеба", pop: 120, lang: "Амхарский" },
+  "Bolivia": { capital: "Сукре", pop: 12, lang: "Испанский" },
+  "Mauritania": { capital: "Нуакшот", pop: 4, lang: "Арабский" },
+  "Egypt": { capital: "Каир", pop: 104, lang: "Арабский" },
+  "Tanzania": { capital: "Додома", pop: 63, lang: "Суахили" },
+  "Nigeria": { capital: "Абуджа", pop: 218, lang: "Английский" },
+  "Venezuela": { capital: "Каракас", pop: 29, lang: "Испанский" },
+  "Namibia": { capital: "Виндхук", pop: 3, lang: "Английский" },
+  "Mozambique": { capital: "Мапуту", pop: 32, lang: "Португальский" },
+  "Pakistan": { capital: "Исламабад", pop: 231, lang: "Урду" },
+  "Turkey": { capital: "Анкара", pop: 84, lang: "Турецкий" },
+  "Chile": { capital: "Сантьяго", pop: 19, lang: "Испанский" },
+  "Zambia": { capital: "Лусака", pop: 19, lang: "Английский" },
+  "Myanmar": { capital: "Нейпьидо", pop: 54, lang: "Бирманский" },
+  "Afghanistan": { capital: "Кабул", pop: 40, lang: "Пушту" },
+  "Somalia": { capital: "Могадишо", pop: 17, lang: "Сомалийский" },
+  "Germany": { capital: "Берлин", pop: 83, lang: "Немецкий" },
+  "France": { capital: "Париж", pop: 68, lang: "Французский" },
+  "Ukraine": { capital: "Киев", pop: 44, lang: "Украинский" },
+  "Madagascar": { capital: "Антананариву", pop: 28, lang: "Малагасийский" },
+  "Botswana": { capital: "Габороне", pop: 3, lang: "Английский" },
+  "Kenya": { capital: "Найроби", pop: 55, lang: "Суахили" },
+  "Thailand": { capital: "Бангкок", pop: 70, lang: "Тайский" },
+  "Spain": { capital: "Мадрид", pop: 47, lang: "Испанский" },
+  "Cameroon": { capital: "Яунде", pop: 27, lang: "Французский" },
+  "Sweden": { capital: "Стокгольм", pop: 10, lang: "Шведский" },
+  "Uzbekistan": { capital: "Ташкент", pop: 35, lang: "Узбекский" },
+  "Morocco": { capital: "Рабат", pop: 37, lang: "Арабский" },
+  "Iraq": { capital: "Багдад", pop: 41, lang: "Арабский" },
+  "Paraguay": { capital: "Асунсьон", pop: 7, lang: "Испанский" },
+  "Zimbabwe": { capital: "Харэ", pop: 16, lang: "Английский" },
+  "Japan": { capital: "Токио", pop: 125, lang: "Японский" },
+  "Norway": { capital: "Осло", pop: 5, lang: "Норвежский" },
+  "Poland": { capital: "Варшава", pop: 38, lang: "Польский" },
+  "Finland": { capital: "Хельсинки", pop: 6, lang: "Финский" },
+  "Italy": { capital: "Рим", pop: 60, lang: "Итальянский" },
+  "United Kingdom": { capital: "Лондон", pop: 67, lang: "Английский" },
+  "New Zealand": { capital: "Веллингтон", pop: 5, lang: "Английский" },
+  "South Korea": { capital: "Сеул", pop: 52, lang: "Корейский" },
+  "North Korea": { capital: "Пхеньян", pop: 26, lang: "Корейский" },
+  "Vietnam": { capital: "Ханой", pop: 98, lang: "Вьетнамский" },
+  "Philippines": { capital: "Манила", pop: 113, lang: "Филипинский" },
+  "Malaysia": { capital: "Куала-Лумпур", pop: 33, lang: "Малайский" },
+  "Cambodia": { capital: "Пномпень", pop: 17, lang: "Кхмерский" },
+  "Laos": { capital: "Вьентьян", pop: 7, lang: "Лаосский" },
+  "Nepal": { capital: "Катманду", pop: 30, lang: "Непальский" },
+  "Bangladesh": { capital: "Дакка", pop: 167, lang: "Бенгальский" },
+  "Greece": { capital: "Афины", pop: 11, lang: "Греческий" },
+  "Romania": { capital: "Бухарест", pop: 19, lang: "Румынский" },
+  "Hungary": { capital: "Будапешт", pop: 10, lang: "Венгерский" },
+  "Czech Republic": { capital: "Прага", pop: 11, lang: "Чешский" },
+  "Austria": { capital: "Вена", pop: 9, lang: "Немецкий" },
+  "Switzerland": { capital: "Берн", pop: 9, lang: "Немецкий" },
+  "Belgium": { capital: "Брюссель", pop: 12, lang: "Нидерландский" },
+  "Netherlands": { capital: "Амстердам", pop: 17, lang: "Нидерландский" },
+  "Portugal": { capital: "Лиссабон", pop: 10, lang: "Португальский" },
+  "Denmark": { capital: "Копенгаген", pop: 6, lang: "Датский" },
+  "Belarus": { capital: "Минск", pop: 9, lang: "Белорусский" },
+  "Azerbaijan": { capital: "Баку", pop: 10, lang: "Азербайджанский" },
+  "Georgia": { capital: "Тбилиси", pop: 4, lang: "Грузинский" },
+  "Armenia": { capital: "Ереван", pop: 3, lang: "Армянский" },
+  "Turkmenistan": { capital: "Ашхабад", pop: 6, lang: "Туркменский" },
+  "Kyrgyzstan": { capital: "Бишкек", pop: 7, lang: "Киргизский" },
+  "Tajikistan": { capital: "Душанбе", pop: 10, lang: "Таджикский" },
+  "Oman": { capital: "Маскат", pop: 5, lang: "Арабский" },
+  "Yemen": { capital: "Сана", pop: 33, lang: "Арабский" },
+  "Syria": { capital: "Дамаск", pop: 22, lang: "Арабский" },
+  "Jordan": { capital: "Амман", pop: 10, lang: "Арабский" },
+  "Israel": { capital: "Иерусалим", pop: 9, lang: "Иврит" },
+  "Lebanon": { capital: "Бейрут", pop: 7, lang: "Арабский" },
+  "Kuwait": { capital: "Эль-Кувейт", pop: 4, lang: "Арабский" },
+  "Qatar": { capital: "Доха", pop: 3, lang: "Арабский" },
+  "United Arab Emirates": { capital: "Абу-Даби", pop: 10, lang: "Арабский" },
+  "Tunisia": { capital: "Тунис", pop: 12, lang: "Арабский" },
+  "Senegal": { capital: "Дакар", pop: 17, lang: "Французский" },
+  "Ghana": { capital: "Аккра", pop: 33, lang: "Английский" },
+  "Ivory Coast": { capital: "Ямусукро", pop: 27, lang: "Французский" },
+  "Guinea": { capital: "Конакри", pop: 13, lang: "Французский" },
+  "Burkina Faso": { capital: "Уагадугу", pop: 22, lang: "Французский" },
+  "Uganda": { capital: "Кампала", pop: 48, lang: "Английский" },
+  "Rwanda": { capital: "Кигали", pop: 14, lang: "Киньяруанда" },
+  "South Sudan": { capital: "Джуба", pop: 11, lang: "Английский" },
+  "Democratic Republic of the Congo": { capital: "Киншаса", pop: 100, lang: "Французский" },
+  "Central African Republic": { capital: "Банги", pop: 5, lang: "Французский" },
+  "Ecuador": { capital: "Кито", pop: 18, lang: "Испанский" },
+  "Uruguay": { capital: "Монтевидео", pop: 4, lang: "Испанский" },
+  "Guatemala": { capital: "Гватемала", pop: 17, lang: "Испанский" },
+  "Cuba": { capital: "Гавана", pop: 11, lang: "Испанский" },
+  "Slovakia": { capital: "Братислава", pop: 6, lang: "Словацкий" },
+  "Croatia": { capital: "Загреб", pop: 4, lang: "Хорватский" },
+  "Serbia": { capital: "Белград", pop: 7, lang: "Сербский" },
+  "Bulgaria": { capital: "София", pop: 7, lang: "Болгарский" },
+  "Estonia": { capital: "Таллин", pop: 1, lang: "Эстонский" },
+  "Latvia": { capital: "Рига", pop: 2, lang: "Латышский" },
+  "Lithuania": { capital: "Вильнюс", pop: 3, lang: "Литовский" },
+  "Iceland": { capital: "Рейкьявик", pop: 0.4, lang: "Исландский" },
+  "Ireland": { capital: "Дублин", pop: 5, lang: "Английский" },
+  "Sri Lanka": { capital: "Шри-Джаяварденепура-Котте", pop: 22, lang: "Сингальский" },
+  "Papua New Guinea": { capital: "Порт-Морсби", pop: 10, lang: "Tok Pisin" },
+  "Congo": { capital: "Браззавиль", pop: 6, lang: "Французский" },
+  "Gabon": { capital: "Либревиль", pop: 2, lang: "Французский" },
+  "Eritrea": { capital: "Асмэра", pop: 4, lang: "Тигринья" },
+  "Malawi": { capital: "Лилонгве", pop: 20, lang: "Английский" },
+  "Honduras": { capital: "Тегусигальпа", pop: 10, lang: "Испанский" },
+  "Nicaragua": { capital: "Манагуа", pop: 7, lang: "Испанский" },
+  "Costa Rica": { capital: "Сан-Хосе", pop: 5, lang: "Испанский" },
+  "Panama": { capital: "Панама", pop: 4, lang: "Испанский" },
+  "Moldova": { capital: "Кишинёв", pop: 3, lang: "Румынский" },
+  "Albania": { capital: "Тирана", pop: 3, lang: "Албанский" },
+  "North Macedonia": { capital: "Скопье", pop: 2, lang: "Македонский" },
+  "Bosnia and Herz.": { capital: "Сараево", pop: 3, lang: "Боснийский" },
+  "Montenegro": { capital: "Подгорица", pop: 1, lang: "Сербский" },
+  "Slovenia": { capital: "Любляна", pop: 2, lang: "Словенский" },
+  "Singapore": { capital: "Сингапур", pop: 6, lang: "Английский" },
+};
+
+const map = L.map('map', { center: [20, 0], zoom: 2, attributionControl: false });
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+
+const info = document.getElementById('info');
+
+let geojsonLayer;
+
+function getStyle() {
+  return { fillColor: '#378ADD', weight: 0.5, opacity: 1, color: '#fff', fillOpacity: 0.4 };
+}
+
+function onMouseOver(e) {
+  e.target.setStyle({ fillOpacity: 0.75, weight: 1.5 });
+  const name = e.target.feature.properties.name || '';
+  const d = countries[name];
+  if (d) {
+    const pop = d.pop >= 1 ? d.pop + ' млн' : (d.pop * 1000).toFixed(0) + ' тыс';
+    info.innerHTML = `
+      <div class="country-name">${name}</div>
+      <div>🏛 ${d.capital}</div>
+      <div>👥 ${pop} человек</div>
+      <div>🗣 ${d.lang}</div>
+    `;
+  } else {
+    info.innerHTML = `<div class="country-name">${name}</div>`;
+  }
+}
+
+function onMouseOut(e) {
+  geojsonLayer.resetStyle(e.target);
+  info.textContent = 'Наведите на страну';
+}
+
+fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+  .then(r => r.json())
+  .then(world => {
+    const geojson = topojson.feature(world, world.objects.countries);
+    geojsonLayer = L.geoJSON(geojson, {
+      style: getStyle,
+      onEachFeature: (feature, layer) => {
+        layer.on({ mouseover: onMouseOver, mouseout: onMouseOut });
+      }
+    }).addTo(map);
+  });
+</script>
+</body>
+</html>
